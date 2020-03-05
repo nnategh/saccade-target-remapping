@@ -1,0 +1,1 @@
+system('sbatch hpc.sh');
