@@ -1,4 +1,4 @@
-function neda02()
+function analyzeSTEffectPropagation()
     % Distribution (propagation) of saccadic effects (specifically saccade
     % target remapping)
     
@@ -24,9 +24,14 @@ function neda02()
         for imdl = 1:numel(effectSizeModels)
             flag.EffectSizeModel = effectSizeModels{imdl};
             
-            plotEffectSizeDist();
-            findOptimalEffectSizeThreshold();
-            plotControlEffectSizeModel();
+            try
+                plotEffectSizeDist();
+                findOptimalEffectSizeThreshold();
+                plotControlEffectSizeModel();
+            catch
+                warning(flag.EffectSizeMethod);
+                warning(flag.EffectSizeModel);
+            end
             
             close('all');
         end
@@ -67,15 +72,15 @@ function S = getEffectSizePValue()
     W = getW();
     [nn, ~, ~] = size(W); % number of neurons, probe locations, and times
     
-    locs = getEffectLocs(); % effect locations
-    nl = numel(locs); % number of effect locations
-    
-    S = zeros(nn, nl); % hypothesis test result/p-value of difference between fixation and saccadic period
+    S = zeros(nn, 1); % hypothesis test result/p-value of difference between fixation and saccadic period
+    FP2 = getFP(2, true); % probe location of second fixation points
     
     fprintf('\nFind effect size (pvalue):\n');
     tic();
     for in = 1:nn % for each neuron
         % fprintf('Neuron: %d\n', in);
+        
+        locs = getEffectLocs(FP2(in, :)); % effect locations
         
         % for il = 1:nl % for each probe location
         for il = locs % for each effect probe location
@@ -84,11 +89,12 @@ function S = getEffectSizePValue()
                 W(in, il, sacIdx), ...
                 'Vartype','unequal');
             
-            S(in, il) = -log10(p);
+            S(in) = S(in) + -log10(p);
         end
+        
+        nl = numel(locs); % number of effect locations
+        S(in) = S(in) / nl; % averagen on effect locations
     end
-    
-    S = mean(S, 2);
     
     toc();
     
@@ -112,15 +118,15 @@ function S = getEffectSizeTStat()
     W = getW();
     [nn, ~, ~] = size(W); % number of times, probe locations, and times
     
-    locs = getEffectLocs(); % effect locations
-    nl = numel(locs); % number of effect locations
-    
-    S = zeros(nn, nl); % hypothesis test result of difference between fixation and saccadic period
+    S = zeros(nn, 1); % hypothesis test result of difference between fixation and saccadic period
+    FP2 = getFP(2, true); % probe location of second fixation points
     
     fprintf('\nFind effect size (pvalue):\n');
     tic();
     for in = 1:nn % for each neuron
         % fprintf('Neuron: %d\n', in);
+        
+        locs = getEffectLocs(FP2(in, :)); % effect locations
         
         % for il = 1:nl % for each probe location
         for il = locs % for each effect probe location
@@ -129,11 +135,12 @@ function S = getEffectSizeTStat()
                 W(in, il, sacIdx), ...
                 'Vartype','unequal');
             
-            S(in, il) = stats.tstat;
+            S(in) = S(in) + stats.tstat;
         end
+        
+        nl = numel(locs); % number of effect locations
+        S(in) = S(in) / nl; % averagen on effect locations
     end
-    
-    S = mean(S, 2);
     
     toc();
     
@@ -157,26 +164,27 @@ function S = getEffectSizeResp()
     W = getW();
     [nn, ~, ~] = size(W); % number of times, probe locations, and times
     
-    locs = getEffectLocs(); % effect locations
-    nl = numel(locs); % number of effect locations
-    
-    S = zeros(nn, nl); % hypothesis test result of difference between fixation and saccadic period
+    S = zeros(nn, 1); % hypothesis test result of difference between fixation and saccadic period
+    FP2 = getFP(2, true); % probe location of second fixation points
     
     fprintf('\nFind effect size (pvalue):\n');
     tic();
     for in = 1:nn % for each neuron
         % fprintf('Neuron: %d\n', in);
         
+        locs = getEffectLocs(FP2(in, :)); % effect locations
+        
         % for il = 1:nl % for each probe location
         for il = locs % for each effect probe location
             r1 = mean(W(in, il, fixIdx));
             r2 = mean(W(in, il, sacIdx));
             
-            S(in, il) = (r2 - r1) / (r2 + r1);
+            S(in) = S(in) + ((r2 - r1) / (r2 + r1));
         end
+        
+        nl = numel(locs); % number of effect locations
+        S(in) = S(in) / nl; % averagen on effect locations
     end
-    
-    S = mean(S, 2);
     
     toc();
     
@@ -275,18 +283,32 @@ function th = findOptimalEffectSizeThreshold()
 end
 
 % Effect - Locations
-function locs = getEffectLocs()
+function locs = getEffectLocs(c, r)
     % Get interest locations for defining effect
+    %
+    % Parameters
+    % ==========
+    % - c: [number, number]
+    %   Center
+    % - r: number
+    %   Radius
+    %
+    % Returns
+    % =======
+    % - locs: number[, 2]
+    %   Location of neighbours
     
-    global loc
+    if nargin < 2
+        r = 1;
+    end
     
     info = getInfo();
     sz = [info.width, info.height];
     
     locs = [];
-    for x = -1:1
-        for y = -1:1
-            l = loc + [x, y];
+    for x = -r:r
+        for y = -r:r
+            l = c + [x, y];
             
             try
                 l = sub2ind(sz, l(1), l(2)); % todo: use `probeToIndex`
@@ -486,7 +508,7 @@ end
 
 function [P, Y_, I] = measureEffectSizeModelPerfCorr()
 
-    global sac loc flag
+    global sac flag
     
     fieldNameP = sprintf(...
         'neda02_perf_corr_meth_%s_mdl_%s', ...

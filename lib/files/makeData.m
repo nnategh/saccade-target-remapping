@@ -1,40 +1,42 @@
 function makeData()
     % Make data
     
-    dataFolder = 'data';
-    if ~exist(dataFolder, 'dir')
-        mkdir(dataFolder);
-    end
+    ids = getNeuronIDsFromInfo();
     
-    filenames = getFilenames();
-    filenames = modifyFilenames(filenames);
-    
-    fprintf('\nMake data:\n');
+    fprintf('\nMake Data:\n');
     tic();
-    
-    parfor i = 1:numel(filenames)
-        filename = filenames{i};
+    parpool(6);
+    parfor i = 1:numel(ids) % todo: parfor
+        id = ids{i};
+        fprintf('%d - %s\n', i, id);
         
-        [~, name, ~] = fileparts(filename);
-        fprintf('%3d - %s\n', i, name);
+        outFilename = getOutFilename(id);
         
-        data = getData(filename);
+        if isfile(outFilename)
+            continue;
+        end
         
-        saveData(data, dataFolder, filename);
+        inFilename = getInFilename(id);
+        
+        if ~isfile(inFilename)
+            disp(inFilename);
+            disp('^^^');
+            continue
+        end
+        
+        data = getData(inFilename);
+        saveData(outFilename, data);
     end
     toc();
 end
 
-function filenames = modifyFilenames(filenames)
-    % Modify (change folder and name) of filenames
-    % scdata2_181026_61_1.mat
-    folder = '/uufs/chpc.utah.edu/common/home/noudoost-group1/Barfak/scdata';
+function inFilename = getInFilename(id)
+    % folder = '/uufs/chpc.utah.edu/common/home/noudoost-group1/Barfak/scdata';
+    folder = '/uufs/chpc.utah.edu/common/home/noudoost-group1/yasin/scdata';
     
-    for i = 1:numel(filenames)
-        [~, name, ~] = fileparts(filenames{i});
-        name = strrep(name, 'neuron', 'scdata');
-        filenames{i} = fullfile(folder, [name, '.mat']);
-    end
+    [session, channel, unit] = getSessionChannelUnit(id);
+    name = sprintf('scdata_%d_%02d_%d.mat', session, channel, unit);
+    inFilename = fullfile(folder, name);
 end
 
 function data = getData(filename)
@@ -52,6 +54,7 @@ function data = getData(filename)
 
     % resp
     resp = sacAlign(scdata.resp, tsac); % saccade align
+    resp(isnan(resp)) = false; %? nan ->? false
     resp = logical(resp); % cast type
 
     % cond
@@ -99,13 +102,14 @@ function adata = sacAlign(data, tsac)
     end
 end
 
-function saveData(data, dataFolder, filename)
-    save(...
-        fullfile(dataFolder, getOutFilename(filename)), ...
-        '-struct', 'data');
+function saveData(filename, data)
+    save(filename, '-struct', 'data');
 end
 
-function outFilename = getOutFilename(filename)
-    load(filename, 'id', 'ch', 'un');
-    outFilename = [id, ch, un, '.mat'];
+function outFilename = getOutFilename(id)
+    folder = '/uufs/chpc.utah.edu/common/home/noudoost-group1/yasin/st-data/';
+    if ~isfolder(folder)
+        mkdir(folder);
+    end
+    outFilename = fullfile(folder, [id, '.mat']);
 end

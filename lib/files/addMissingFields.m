@@ -1,24 +1,28 @@
 function addMissingFields()
     
-    % filenames = getSkrnsFilenames();
-    filenames = getFilenames();
+    ids = getNeuronIDsFromInfo();
     
     fprintf('\nAdd missing fields:\n');
     tic();
-    parfor i = 1:numel(filenames)
-        filename = filenames{i};
+    parfor i = 1:numel(ids) % todo: parfor
+        id = ids{i};
+        fprintf('%d - %s\n', i, id);
         
-        [~, name, ~] = fileparts(filename);
-        fprintf('%d - %s\n', i, name);
-        
-        data = getData(filename);
-        
-        outFilename = getOutFilename(filename);
-        
+        inFilename = getInFilename(id);
+        data = getData(inFilename);
+        outFilename = getOutFilename(id);
         appendData(outFilename, data);
     end
     toc();
     
+end
+
+function inFilename = getInFilename(id)
+    folder = '/uufs/chpc.utah.edu/common/home/noudoost-group1/Barfak/skrns';
+    
+    [session, channel, unit] = getSessionChannelUnit(id);
+    name = sprintf('neuron_%d_%d_%d.mat', session, channel, unit);
+    inFilename = fullfile(folder, name);
 end
 
 function data = getData(filename)
@@ -50,13 +54,9 @@ function grid = getGrid(XoB, YoB)
     end
 end
 
-function outFilename = getOutFilename(filename)
-    folder = '/uufs/chpc.utah.edu/common/home/noudoost-group1/yasin/barfak/';
-    
-    [~, name, ~] = fileparts(filename);
-    name = extractDigits(name);
-    
-    outFilename = fullfile(folder, [name, '.mat']);
+function outFilename = getOutFilename(id)
+    folder = '/uufs/chpc.utah.edu/common/home/noudoost-group1/yasin/st-data/';
+    outFilename = fullfile(folder, [id, '.mat']);
 end
 
 function appendData(filename, data)

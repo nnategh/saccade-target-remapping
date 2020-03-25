@@ -26,16 +26,9 @@ function main()
 
     % start main timer
     main_timer = tic();
-
-    % Analyze `receptive field` distribution
-    % analyzeRF(1);
-    % analyzeRF(2);
     
-    % Analyze responsive locations
-    % neda01();
-    
-    % Analyze propagation of saccadic effects
-    neda02();
+    % Analyze propagation of saccade target effect
+    analyzeSTEffectPropagation();
 
     fprintf('\n\n');
     toc(main_timer);

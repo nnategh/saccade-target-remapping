@@ -1,4 +1,4 @@
-function neda01()
+function analyzeEffectiveLocations()
     % Plot responsive locations
     % Responsive location: A location which a neuron significantly is
     % responsive to

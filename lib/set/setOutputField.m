@@ -8,6 +8,6 @@ function setOutputField(fieldName, fieldValue)
     if exist(outputFilename, 'file')
         save(outputFilename, '-struct', 'S', '-append');
     else
-        save(outputFilename, '-struct', 'S');
+        save(outputFilename, '-struct', 'S', '-v7.3');
     end
 end

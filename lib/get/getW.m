@@ -13,6 +13,8 @@ function W = getW()
             W = getWSModelKernel();
         case 'smm-kernel'
             W = getWSMMKernel();
+        case 'smodel-response'
+            W = getWSModelResponse();
         case 'smm-response'
             W = getWSMMResponse();
     end
@@ -26,7 +28,7 @@ function W = getWSModelKernel()
         return
     end
     
-    filenames = getModelFilenames(); % get model filenames with same grid and saccade vector
+    filenames = getModelFilenames(); % get model filenames
     nn = numel(filenames); % number of neurons
     [width, height] = getWidthHeightOfGrid();
     
@@ -71,7 +73,7 @@ function W = getWSMMKernel()
         return
     end
     
-    filenames = getModelFilenames(); % get model filenames with same grid and saccade vector
+    filenames = getModelFilenames(); % get model filenames
     nn = numel(filenames); % number of neurons
     [width, height] = getWidthHeightOfGrid();
     W = zeros(nn, width * height, getNumOfTimes());
@@ -100,6 +102,59 @@ function W = getWSMMKernel()
     toc();
 end
 
+function W = getWSModelResponse()
+    
+    W = getOutputField('W');
+    
+    if ~isempty(W)
+        return
+    end
+    
+    filenames = getModelFilenames(); % get model filenames
+    nn = numel(filenames); % number of neurons
+    [width, height] = getWidthHeightOfGrid();
+    
+    W = zeros(nn, width * height, getNumOfTimes());
+    
+    fprintf('\nLinear kernels: \n');
+    tic();
+    parfor i = 1:nn % todo: parfor
+        filename = filenames{i};
+        
+        [~, name, ~] = fileparts(filename);
+        fprintf('%3d - %s\n', i, name);
+        
+        S = load(filename);
+        w = S.stm;
+        
+        % folds
+        % w = squeeze(skrn(1, :, :, :, :));
+        w = squeeze(mean(w, 1));
+        
+        % normalize
+        % w = w ./ max(w(:));
+
+        % delay
+        w = reshape(w, size(w, 1) * size(w, 2), size(w, 3), size(w, 4)); % location -> index
+        w = sum(w, 3); % sum over `delay` dimension
+        
+        %? off
+        % folds
+        off = mean(S.off, 1);
+        w = w + off;
+        
+        %? non-lin
+        nln = S.nln;
+        w = nln(2) .* logsig(w - nln(1));
+        
+        W(i, :, :) = w;
+    end
+    
+    setOutputField('W', W);
+    
+    toc();
+end
+
 function W = getWSMMResponse()
     
     W = getOutputField('W');
@@ -108,7 +163,7 @@ function W = getWSMMResponse()
         return
     end
     
-    filenames = getModelFilenames(); % get model filenames with same grid and saccade vector
+    filenames = getModelFilenames(); % get model filenames
     nn = numel(filenames); % number of neurons
     [width, height] = getWidthHeightOfGrid();
     nl = width * height; % number of locations

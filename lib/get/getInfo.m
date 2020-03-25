@@ -4,8 +4,8 @@ function info = getInfo()
     % info
     width = 9;
     height = 9;
-    tmin = -500; % -540 | -500
-    tmax = 500; % 540 | 500
+    tmin = -540; % -540 | -500
+    tmax = 540; % 540 | 500
     dmin = 0;
     dmax = 150; % 200 | 150
     fix = [tmin, tmin + dmax];
@@ -14,7 +14,7 @@ function info = getInfo()
     
     % flag
     flag = struct(...
-        'method', 'smm-response', ... % 'smodel-kernel' | 'smm-kernel' | 'smm-response'
+        'method', 'smodel-response', ... % 'smodel-kernel' | 'smm-kernel' | 'smodel-response' | 'smm-response'
         'displacement', '1x1', ... % '1pad' | '3x3' | '1x1'
         'probes', 'all', ... % 'all' | 'sub'
         'removedEffects', 'none' ... 'none' | 'all'
@@ -22,13 +22,16 @@ function info = getInfo()
     
     % folder
     % - assets
-    assetsFolder = '/uufs/chpc.utah.edu/common/home/noudoost-group1/yasin/saccade-target-remapping/assets/'; % './assets';
+    % assetsFolder = '/uufs/chpc.utah.edu/common/home/noudoost-group1/yasin/saccade-target-remapping/assets/'; 
+    assetsFolder = './assets';
     % - data
-    dataFolder = '/uufs/chpc.utah.edu/common/home/noudoost-group1/yasin/barfak/';
+    % dataFolder = '/uufs/chpc.utah.edu/common/home/noudoost-group1/yasin/data/';
+    dataFolder = 'D:\data\data';
     % - models
     switch flag.method
-        case 'smodel-kernel'
-            modelsFolder = '/uufs/chpc.utah.edu/common/home/noudoost-group1/yasin/smodel/';
+        case {'smodel-kernel', 'smodel-response'}
+            % modelsFolder = '/uufs/chpc.utah.edu/common/home/noudoost-group1/yasin/smodel/';
+            modelsFolder = 'D:\data\smodel';
         case {'smm-kernel', 'smm-response'}
             modelsFolder = '/uufs/chpc.utah.edu/common/home/noudoost-group1/yasin/smm/assets/results-z-15/';
     end

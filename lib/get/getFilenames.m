@@ -9,9 +9,9 @@ function filenames = getFilenames()
     
     filenames = getDataFilenames(); % all neurons
     
-    % filter neurons
-    filenames = filterByGrid(filenames); % neurons with same grid
-    filenames = filterBySaccadeVector(filenames); % neurons with same saccade vector
+    % % filter neurons
+    % filenames = filterByGrid(filenames); % neurons with same grid
+    % filenames = filterBySaccadeVector(filenames); % neurons with same saccade vector
     % filenames = filterByRF1ToRF2Direction(filenames, N); % neurons with rf1 to rf2 direction same as saccade vector
     
     % remove folder and extension from filenames
@@ -29,7 +29,7 @@ function filenames = filterByGrid(filenames)
     info = getInfo();
     N = info.N;
     
-    G = {};
+    G = {}; % Groups of neurons with the same grid
     
     fprintf('\nFilter neurons with the same grid: \n');
     tic();
