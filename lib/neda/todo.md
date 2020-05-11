@@ -1,4 +1,0 @@
-To do
-=====
-- Filter neurons
-- 
